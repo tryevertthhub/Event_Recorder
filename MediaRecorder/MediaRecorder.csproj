@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Images\MousePlayback.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="blueRecord.png" />
+    <None Remove="blueZzz.png" />
+    <None Remove="closebtn.png" />
+    <None Remove="home.png" />
+    <None Remove="library.png" />
+    <None Remove="minimize.png" />
+    <None Remove="play.png" />
+    <None Remove="setting.png" />
+    <None Remove="stop.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Images\MousePlayback.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="InputSimulator" Version="1.0.4" />
+    <PackageReference Include="InputSimulatorCore" Version="1.0.5" />
+    <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
+    <PackageReference Include="MouseKeyHook" Version="5.7.1" />
+    <PackageReference Include="WindowsInput" Version="6.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="blueRecord.png" />
+    <Resource Include="blueZzz.png" />
+    <Resource Include="closebtn.png" />
+    <Resource Include="home.png" />
+    <Resource Include="library.png" />
+    <Resource Include="minimize.png" />
+    <Resource Include="play.png" />
+    <Resource Include="setting.png" />
+    <Resource Include="stop.png" />
+  </ItemGroup>
+
+</Project>
