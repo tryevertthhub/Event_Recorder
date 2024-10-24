@@ -1,1 +1,1 @@
-# Event_Recorder
+# Mouse Event Recorder
