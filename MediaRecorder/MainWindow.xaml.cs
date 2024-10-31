@@ -413,7 +413,7 @@ namespace MediaRecorder
                 string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "blueZzz.png");
                 this.statusImage.Source = new BitmapImage(new Uri(imagePath, UriKind.Absolute));
                 MessageBox.Show("Replay finished!");
-            }
+            } 
         }
 
 
