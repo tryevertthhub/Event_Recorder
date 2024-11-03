@@ -30,7 +30,7 @@ namespace MediaRecorder
         private const int HOTKEY_STOP_RECORD = 120; // F10
         private const int HOTKEY_REPLAY = 121; // F11
 
-        public double PlaybackSpeed { get; set; } = 1.0;
+        public double PlaybackSpeed { get; set; } = 2.0;
         private List<Action> loadedActions = null;
 
         [DllImport("user32.dll")]
@@ -302,6 +302,36 @@ namespace MediaRecorder
 
             return actions;
         }
+
+        private List<(Action action, int delayMs)> LoadActionsWithDelays(string filePath, double playbackSpeed)
+        {
+            var actions = LoadActionsFromFile(filePath);
+            if (actions == null || actions.Count < 2) return null;
+
+            var actionsWithDelays = new List<(Action, int)>();
+            actionsWithDelays.Add((actions[0], 0)); // First action has no delay
+
+            for (int i = 1; i < actions.Count; i++)
+            {
+                var previousAction = actions[i - 1];
+                var currentAction = actions[i];
+
+                // Calculate the original delay in milliseconds
+                TimeSpan originalDelay = currentAction.TimeStamp - previousAction.TimeStamp;
+
+                // Adjust the delay according to PlaybackSpeed
+                int adjustedDelayMs = (int)(originalDelay.TotalMilliseconds / playbackSpeed);
+
+                // Add the current action with its adjusted delay
+                actionsWithDelays.Add((currentAction, adjustedDelayMs));
+            }
+
+            return actionsWithDelays;
+        }
+
+
+
+
         private void SaveActions()
         {
             // Create a SaveFileDialog to prompt the user for the file name and location
@@ -341,8 +371,86 @@ namespace MediaRecorder
         private CancellationTokenSource playbackCancellationTokenSource;
         // Modify ReplayActions to use lastRecordingFilePath
 
+        private async Task ReplayActions()
+        {
+          
+            if (loadedActions == null || loadedActions.Count == 0)
+            {
+                tbLog.AppendText("No preloaded actions available for replay.\n");
+                return;
+            }
+
+            this.status.Text = "Playing...";
+            isPlaying = true;
+            playbackCancellationTokenSource = new CancellationTokenSource();
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            DateTime previousTime = loadedActions[0].TimeStamp;
+            bool isDoubleClickDetected = false;
+
+            try
+            {
+                for (int i = 0; i < loadedActions.Count; i++)
+                {
+                    var action = loadedActions[i];
+
+                    if (playbackCancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        MessageBox.Show("Playback interrupted.");
+                        StopPlaying();
+                        return;
+                    }
+
+                    // Calculate delay based on action timestamps
+                    //  TimeSpan delay = action.TimeStamp - previousTime;
+                    TimeSpan delay = TimeSpan.FromMilliseconds((action.TimeStamp - previousTime).TotalMilliseconds / PlaybackSpeed);
+                    previousTime = action.TimeStamp;
+
+                    // Handle fast double-click events
+                    if (action.Type == ActionType.LEFT_DOWN && i < loadedActions.Count - 2)
+                    {
+                        var nextAction = loadedActions[i + 1];
+                        var nextNextAction = loadedActions[i + 2];
+
+                        // Check if the next actions are LEFT_UP and another LEFT_DOWN with a small interval
+                        if (nextAction.Type == ActionType.LEFT_UP &&
+                            nextNextAction.Type == ActionType.LEFT_DOWN &&
+                            (nextNextAction.TimeStamp - action.TimeStamp).TotalMilliseconds < 200)
+                        {
+                            isDoubleClickDetected = true;
+                        }
+                    }
+
+                    // Adjust delay for rapid clicks (especially double clicks)
+                    if (isDoubleClickDetected && delay.TotalMilliseconds < 200)
+                    {
+                        await Task.Delay(200); // Enforce minimum delay for double-click simulation
+                        isDoubleClickDetected = false;
+                    }
+                    else
+                    {
+                        await Task.Delay((int)delay.TotalMilliseconds);
+                    }
+
+                    // Simulate the action
+                    SimulateAction(action.Type, action.X, action.Y, action.Delta);
+                }
+            }
+            finally
+            {
+                isPlaying = false;
+                this.status.Text = "Idle";
+                string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "blueZzz.png");
+                this.statusImage.Source = new BitmapImage(new Uri(imagePath, UriKind.Absolute));
+                MessageBox.Show("Replay finished!");
+            }
+        }
+
         //private async Task ReplayActions()
         //{
+
         //    if (loadedActions == null || loadedActions.Count == 0)
         //    {
         //        tbLog.AppendText("No preloaded actions available for replay.\n");
@@ -372,9 +480,9 @@ namespace MediaRecorder
         //                return;
         //            }
 
-        //            // Calculate delay based on action timestamps
-        //            //  TimeSpan delay = action.TimeStamp - previousTime;
+        //            // Calculate adjusted delay based on PlaybackSpeed
         //            TimeSpan delay = TimeSpan.FromMilliseconds((action.TimeStamp - previousTime).TotalMilliseconds / PlaybackSpeed);
+
         //            previousTime = action.TimeStamp;
 
         //            // Handle fast double-click events
@@ -386,16 +494,16 @@ namespace MediaRecorder
         //                // Check if the next actions are LEFT_UP and another LEFT_DOWN with a small interval
         //                if (nextAction.Type == ActionType.LEFT_UP &&
         //                    nextNextAction.Type == ActionType.LEFT_DOWN &&
-        //                    (nextNextAction.TimeStamp - action.TimeStamp).TotalMilliseconds < 200)
+        //                    (nextNextAction.TimeStamp - action.TimeStamp).TotalMilliseconds / PlaybackSpeed < (100 / PlaybackSpeed))
         //                {
         //                    isDoubleClickDetected = true;
         //                }
         //            }
 
         //            // Adjust delay for rapid clicks (especially double clicks)
-        //            if (isDoubleClickDetected && delay.TotalMilliseconds < 200)
+        //            if (isDoubleClickDetected && delay.TotalMilliseconds < (100 / PlaybackSpeed))
         //            {
-        //                await Task.Delay(200); // Enforce minimum delay for double-click simulation
+        //                await Task.Delay((int)(100 / PlaybackSpeed)); // Enforce minimum delay for double-click simulation
         //                isDoubleClickDetected = false;
         //            }
         //            else
@@ -417,106 +525,11 @@ namespace MediaRecorder
         //    }
         //}
 
-        private async Task ReplayActions()
-        {
-            if (loadedActions == null || loadedActions.Count == 0)
-            {
-                tbLog.AppendText("No preloaded actions available for replay.\n");
-                return;
-            }
-
-            this.status.Text = "Playing...";
-            isPlaying = true;
-            playbackCancellationTokenSource = new CancellationTokenSource();
-
-            DateTime startTime = DateTime.Now;
-            DateTime firstActionTime = loadedActions[0].TimeStamp;
-            bool isDoubleClickDetected = false;
-
-            try
-            {
-                for (int i = 0; i < loadedActions.Count; i++)
-                {
-                    var action = loadedActions[i];
-
-                    if (playbackCancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        MessageBox.Show("Playback interrupted.");
-                        StopPlaying();
-                        return;
-                    }
-
-                    // Calculate the target time for the current action based on playback speed
-                    TimeSpan timeSinceFirstAction = action.TimeStamp - firstActionTime;
-                    DateTime targetTime = startTime.AddMilliseconds(timeSinceFirstAction.TotalMilliseconds / PlaybackSpeed);
-
-                    // Wait until the target time is reached
-                    while (DateTime.Now < targetTime)
-                    {
-                        await Task.Delay(1); // Minimal delay to avoid high CPU usage
-                    }
-
-                    // Double-click detection
-                    if (action.Type == ActionType.LEFT_DOWN && i < loadedActions.Count - 2)
-                    {
-                        var nextAction = loadedActions[i + 1];
-                        var nextNextAction = loadedActions[i + 2];
-
-                        if (nextAction.Type == ActionType.LEFT_UP &&
-                            nextNextAction.Type == ActionType.LEFT_DOWN &&
-                            (nextNextAction.TimeStamp - action.TimeStamp).TotalMilliseconds < 200)
-                        {
-                            isDoubleClickDetected = true;
-                        }
-                    }
-
-                    // Enforce minimum delay for double-click simulation
-                    if (isDoubleClickDetected && (DateTime.Now - targetTime).TotalMilliseconds < 100)
-                    {
-                        await Task.Delay(100);
-                        isDoubleClickDetected = false;
-                    }
-
-                    // Simulate the action
-                    SimulateAction(action.Type, action.X, action.Y, action.Delta);
-                }
-            }
-            finally
-            {
-                isPlaying = false;
-                this.status.Text = "Idle";
-                string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "blueZzz.png");
-                this.statusImage.Source = new BitmapImage(new Uri(imagePath, UriKind.Absolute));
-                MessageBox.Show("Replay finished!");
-            }
-        }
-
-
-
-        private List<Action> AdjustActionTimestamps(List<Action> originalActions, double playbackSpeed)
-        {
-            if (originalActions == null || originalActions.Count < 2) return originalActions;
-
-            var adjustedActions = new List<Action>();
-            DateTime firstActionTime = originalActions[0].TimeStamp;
-            adjustedActions.Add(new Action(originalActions[0].Type, originalActions[0].X, originalActions[0].Y, firstActionTime, originalActions[0].Delta));
-
-            for (int i = 1; i < originalActions.Count; i++)
-            {
-                var originalInterval = originalActions[i].TimeStamp - originalActions[i - 1].TimeStamp;
-                var adjustedInterval = TimeSpan.FromMilliseconds(originalInterval.TotalMilliseconds / playbackSpeed);
-
-                DateTime adjustedTimestamp = adjustedActions[i - 1].TimeStamp + adjustedInterval;
-                adjustedActions.Add(new Action(originalActions[i].Type, originalActions[i].X, originalActions[i].Y, adjustedTimestamp, originalActions[i].Delta));
-            }
-
-            return adjustedActions;
-        }
 
         public async Task PlayRecordedFile(string lastRecordingFilePath)
         {
-            loadedActions = LoadActionsFromFile(lastRecordingFilePath);
-           // loadedActions = AdjustActionTimestamps(loadedActions, PlaybackSpeed);
+            //  loadedActions = LoadActionsFromFile(lastRecordingFilePath);
+            loadedActions = LoadActionsWithDelays(lastRecordingFilePath, PlaybackSpeed);
             await ReplayActions();
         }
         // Helper method to simulate the mouse actions based on recorded types
