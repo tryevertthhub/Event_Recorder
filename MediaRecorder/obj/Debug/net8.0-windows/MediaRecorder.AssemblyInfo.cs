@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MediaRecorder")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d0d350fa856907d6c78b488d3be55733d4b01bbe")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a1219af43232dc0b25db6d1a263ade1a57836b43")]
 [assembly: System.Reflection.AssemblyProductAttribute("MediaRecorder")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MediaRecorder")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

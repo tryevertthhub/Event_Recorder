@@ -1,0 +1,70 @@
+<Window x:Class="MediaRecorder.LibraryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Library" Height="600" Width="800"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <!-- Define two columns, left for the recorded files and right for details and playback -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Recorded Files List (on the left) -->
+        <ListBox x:Name="recordedList"
+                 Grid.Column="0"
+                 Margin="10"
+                 SelectionChanged="recordedList_SelectionChanged"
+                 HorizontalContentAlignment="Stretch"
+                 VerticalContentAlignment="Top"
+                 Background="blue" 
+                 BorderBrush="Gray"
+                 FontSize="14"
+                 FontWeight="Bold"
+                 Foreground="White">
+            <ListBox.Style>
+                <Style TargetType="ListBox">
+                    <Setter Property="VerticalAlignment" Value="Stretch" />
+                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.Style>
+        </ListBox>
+
+        <!-- File Details and Playback Controls (on the right) -->
+        <StackPanel Grid.Column="1" Margin="10">
+
+            <!-- File Details Section -->
+            <TextBlock x:Name="fileDetails" FontSize="16" FontWeight="Bold" Text="No file selected"
+                       Foreground="DarkSlateGray" Margin="0,0,0,10" />
+
+            <!-- Recorded Time Section -->
+            <TextBlock x:Name="recordedTime" FontSize="14" FontWeight="Normal" Text=""
+                       Foreground="DarkSlateGray" Margin="0,0,0,10" />
+
+            <!-- Playback Log (Shows file content) -->
+            <TextBox x:Name="playbackLog" IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     TextWrapping="Wrap"
+                     Background="White"
+                     Foreground="Black"
+                     Height="400" Margin="0,0,0,10"
+                     BorderThickness="1"
+                     BorderBrush="Gray" Width="400" />
+
+            <!-- Play Button -->
+            <Button x:Name="btnPlay"
+                    Content="Upload"
+                    IsEnabled="False"
+                    Width="100"
+                    Height="30"
+                    Click="btnPlay_Click"
+                    Background="DodgerBlue"
+                    Foreground="White"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    BorderBrush="Gray"/>
+        </StackPanel>
+    </Grid>
+</Window>
